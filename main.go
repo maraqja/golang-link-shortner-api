@@ -5,13 +5,7 @@ import (
 	"net/http"
 )
 
-// фукнция обработчик роута /hello
-// Входные параметры:
-// http.ResponseWriter - куда будем писать
-// *http.Request - указатель на содержимое запроса
-func hello(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("Hello")
-} 
+
 
 func main() {
 
@@ -32,9 +26,9 @@ func main() {
 
 	// Поэтому нужно использовать собственный serveMux для каждого из модулей
 	port:=8081
-	
+
 	router := http.NewServeMux() // создаем новый ServeMux
-	router.HandleFunc("/hello", hello)
+	NewHelloHandler(router)
 	server := http.Server{ // конфигурируем сервер через структуру
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
