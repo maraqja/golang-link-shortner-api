@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"link-shortner-api/configs"
 	"link-shortner-api/internal/auth"
 	"net/http"
 )
@@ -10,12 +11,14 @@ import (
 
 func main() {
 
-	// conf := configs.LoadConfig()
+	conf := configs.LoadConfig()
 
 	port := 8081
 
 	router := http.NewServeMux() // создаем новый ServeMux
-	auth.NewAuthHandler(router) 
+	auth.NewAuthHandler(router, &auth.AuthHandlerDependencies{
+		Config: conf,
+	}) 
 	server := http.Server{ // конфигурируем сервер через структуру
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
