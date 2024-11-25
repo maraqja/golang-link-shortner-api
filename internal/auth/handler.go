@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 	"link-shortner-api/configs"
+	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
 	"net/http"
-
-	"github.com/go-playground/validator/v10"
 )
 
 type AuthHandlerDependencies struct { // структура для передачи зависимостей в конструктор
@@ -20,34 +18,12 @@ type AuthHandler struct { // структура для хранения зави
 
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		var payload LoginRequest
-		err := json.NewDecoder(req.Body).Decode(&payload) // декодируем боди в структуру
+
+		payload, err := request.HandleBody[LoginRequest](&w, req) // в квадратные скобки передаем дженерик
+
 		if err != nil {
-			/* будет ошибка если передать:
-			1. невалидный json
-			2. несоответствующий тип данных
-			3. несоответствующий тип данных у полей
-
-			НО если просто не передать поля структуры, то ошибки не будет:
-			В этом случае полям структуры будет присвоены пустые значия (zero value):
-				для string - ""
-				для int - 0
-				для bool - false
-				для вложенных структур - структуру с пустыми значениями
-				для указателей (вложенные структуры можно определять указателями) - nil
-			*/
-			response.ReturnJSON(w, http.StatusBadRequest, error.Error(err))
-			return
+			return // HandleBody сама выдаст соответствующий респонс при ошибке
 		}
-
-		validator := validator.New()
-
-		err = validator.Struct(payload) // валидация будет происходить по тегам
-		if err != nil {
-			response.ReturnJSON(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		fmt.Println(payload)
 		data := LoginResponse{
 			Token: "123456",
@@ -60,7 +36,17 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 
 func (handler *AuthHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("Register")
+		payload, err := request.HandleBody[RegisterRequest](&w, req) // в квадратные скобки передаем дженерик
+
+		if err != nil {
+			return
+		}
+		fmt.Println(payload)
+		data := RegisterResponse{
+			Token: "123456",
+		}
+
+		response.ReturnJSON(w, http.StatusOK, data)
 	}
 }
 
