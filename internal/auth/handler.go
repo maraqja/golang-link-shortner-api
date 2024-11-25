@@ -6,7 +6,8 @@ import (
 	"link-shortner-api/configs"
 	"link-shortner-api/pkg/response"
 	"net/http"
-	"regexp"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type AuthHandlerDependencies struct { // структура для передачи зависимостей в конструктор
@@ -39,17 +40,11 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 			return
 		}
 
-		if payload.Email == "" {
-			response.ReturnJSON(w, http.StatusBadRequest, "email is required")
-			return
-		}
-		match, _ := regexp.MatchString(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`, payload.Email) // создаем regexp для email
-		if !match {
-			response.ReturnJSON(w, http.StatusBadRequest, "invalid email")
-			return
-		}
-		if payload.Password == "" {
-			response.ReturnJSON(w, http.StatusBadRequest, "password is required")
+		validator := validator.New()
+
+		err = validator.Struct(payload) // валидация будет происходить по тегам
+		if err != nil {
+			response.ReturnJSON(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
