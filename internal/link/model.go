@@ -19,6 +19,7 @@ func NewLink(url string) *Link {
 	}
 }
 
+// руна - это целое число (int32), которое представляет собой код символа в Unicode
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func randStringRunes(n int) string {
