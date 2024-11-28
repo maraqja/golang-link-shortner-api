@@ -2,6 +2,8 @@ package link
 
 import (
 	"fmt"
+	"link-shortner-api/pkg/request"
+	"link-shortner-api/pkg/response"
 	"net/http"
 )
 
@@ -25,7 +27,17 @@ func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies
 
 func (handler *LinkHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		handler.LinkRepository.Create(&Link{})
+		body, err := request.HandleBody[LinkCreateRequest](&w, req)
+		if err != nil {
+			return // тк респонс с ошибкой уже отправлен в HandleBody, возвращаемся
+		}
+		// по сути код отсюда и до отправки респонса должен быть в отдельном сервисе
+		link := NewLink(body.Url) // это должно быть в Entity (тк ссылка имеет логику создания хэша)
+		createdLink, err := handler.LinkRepository.Create(link)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		response.ReturnJSON(w, http.StatusCreated, createdLink)
 	}
 }
 

@@ -18,6 +18,11 @@ func NewLinkRepository(database *db.Db) *LinkRepository {
 	}
 }
 
-func (repo *LinkRepository) Create(link *Link) error {
-
+func (repo *LinkRepository) Create(link *Link) (*Link, error) {
+	result := repo.Database.DB.Create(link) // для создания не нужно указывать таблицу, GORM сам понимает куда вставлять по переданной структуре, тк Link содержит поле gorm.Model
+	// Create обогатит link данными gorm.Model (тк передаем по указателю)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return link, nil
 }
