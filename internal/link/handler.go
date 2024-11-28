@@ -6,13 +6,17 @@ import (
 )
 
 type LinkHandlerDependencies struct {
+	*LinkRepository
 }
 
 type LinkHandler struct {
+	*LinkRepository
 }
 
 func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies) {
-	handler := &LinkHandler{}
+	handler := &LinkHandler{
+		LinkRepository: dependencies.LinkRepository,
+	}
 	router.Handle("POST /link", handler.Create())
 	router.Handle("PATCH /link/{id}", handler.Update())
 	router.Handle("DELETE /link/{id}", handler.Delete())
@@ -21,7 +25,7 @@ func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies
 
 func (handler *LinkHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-
+		handler.LinkRepository.Create(&Link{})
 	}
 }
 

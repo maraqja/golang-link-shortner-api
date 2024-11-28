@@ -10,12 +10,11 @@ import (
 )
 
 func main() {
-
+	port := 8081
 	config := configs.LoadConfig()
 
-	_ = db.NewDb(config)
-
-	port := 8081
+	db := db.NewDb(config)
+	linkRepository := link.NewLinkRepository(db)
 
 	router := http.NewServeMux() // создаем новый ServeMux
 
@@ -23,7 +22,9 @@ func main() {
 	auth.NewAuthHandler(router, &auth.AuthHandlerDependencies{
 		Config: config,
 	})
-	link.NewLinkHandler(router, &link.LinkHandlerDependencies{})
+	link.NewLinkHandler(router, &link.LinkHandlerDependencies{
+		LinkRepository: linkRepository,
+	})
 
 	server := http.Server{ // конфигурируем сервер через структуру
 		Addr:    fmt.Sprintf(":%d", port),
