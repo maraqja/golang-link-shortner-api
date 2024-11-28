@@ -16,6 +16,14 @@ type AuthHandler struct { // структура для хранения зави
 	*configs.Config // раносильно записи Config *configs.Config
 }
 
+func NewAuthHandler(router *http.ServeMux, dependencies *AuthHandlerDependencies) {
+	handler := &AuthHandler{
+		Config: dependencies.Config,
+	}
+	router.Handle("POST /auth/login", handler.Login())
+	router.Handle("POST /auth/register", handler.Register())
+}
+
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
@@ -48,12 +56,4 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 
 		response.ReturnJSON(w, http.StatusOK, data)
 	}
-}
-
-func NewAuthHandler(router *http.ServeMux, dependencies *AuthHandlerDependencies) {
-	handler := &AuthHandler{
-		Config: dependencies.Config,
-	}
-	router.Handle("POST /auth/login", handler.Login())
-	router.Handle("POST /auth/register", handler.Register())
 }
