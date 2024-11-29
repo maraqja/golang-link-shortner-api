@@ -32,7 +32,15 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 			return // тк респонс с ошибкой уже отправлен в HandleBody, возвращаемся
 		}
 		// по сути код отсюда и до отправки респонса должен быть в отдельном сервисе
-		link := NewLink(body.Url) // это должно быть в Entity (тк ссылка имеет логику создания хэша)
+		link := NewLink(body.Url)
+		for { // в бесконечном цикле проверяем, что ссылки с таким хешем нет
+			existedLink, _ := handler.LinkRepository.GetByHash(link.Hash)
+			if existedLink == nil { // если уникальный хэш сгенерился, то выходим из цикла
+				break
+			}
+			link.GenerateHash() // если неуникальный хэш сгенерился - генерируем новый
+		}
+
 		createdLink, err := handler.LinkRepository.Create(link)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
