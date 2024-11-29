@@ -26,3 +26,14 @@ func (repo *LinkRepository) Create(link *Link) (*Link, error) {
 	}
 	return link, nil
 }
+
+func (repo *LinkRepository) GetByHash(hash string) (*Link, error) {
+	var link Link
+
+	// repo.Database.DB.First(&link, "hash = ? OR id = ?", hash, id)
+	result := repo.Database.DB.Where("hash = ?", hash).First(&link) // запишет результат в link
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &link, nil
+}
