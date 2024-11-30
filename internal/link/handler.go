@@ -1,10 +1,12 @@
 package link
 
 import (
-	"fmt"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
 	"net/http"
+	"strconv"
+
+	"gorm.io/gorm"
 )
 
 type LinkHandlerDependencies struct {
@@ -51,8 +53,28 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 
 func (handler *LinkHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		id := req.PathValue("id")
-		fmt.Println(id)
+		body, err := request.HandleBody[LinkUpdateRequest](&w, req)
+		if err != nil {
+			return
+		}
+		idString := req.PathValue("id")
+		id, err := strconv.ParseUint(idString, 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		link := &Link{ // не создаем через NewLink конструктор тк хотим дать возможность менять сам hash
+			Model: gorm.Model{ID: uint(id)},
+			Url:   body.Url,
+			Hash:  body.Hash,
+		}
+
+		updatedLink, err := handler.LinkRepository.Update(link)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		response.ReturnJSON(w, http.StatusOK, updatedLink)
 	}
 }
 

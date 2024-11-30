@@ -2,6 +2,8 @@ package link
 
 import (
 	"link-shortner-api/pkg/db"
+
+	"gorm.io/gorm/clause"
 )
 
 // тут реализация взаимодействия с БД
@@ -36,4 +38,14 @@ func (repo *LinkRepository) GetByHash(hash string) (*Link, error) {
 		return nil, result.Error
 	}
 	return &link, nil
+}
+
+func (repo *LinkRepository) Update(link *Link) (*Link, error) {
+	// сам понимает какую таблицу обновлять (тк это gorm model)
+	result := repo.Database.DB.Clauses(clause.Returning{}).Updates(link)
+	//		Clauses(clause.Returning{}) - нужен для того, чтобы вернуть обновленную запись (полная запись из postgres запишется в link)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return link, nil
 }
