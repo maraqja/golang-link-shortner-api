@@ -3,6 +3,7 @@ package link
 import (
 	"link-shortner-api/pkg/db"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -29,6 +30,15 @@ func (repo *LinkRepository) Create(link *Link) (*Link, error) {
 	return link, nil
 }
 
+func (repo *LinkRepository) GetById(id uint) (*Link, error) {
+	var link Link
+	result := repo.Database.DB.First(&link, id) // запишет результат в link
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &link, nil
+}
+
 func (repo *LinkRepository) GetByHash(hash string) (*Link, error) {
 	var link Link
 
@@ -48,4 +58,30 @@ func (repo *LinkRepository) Update(link *Link) (*Link, error) {
 		return nil, result.Error
 	}
 	return link, nil
+}
+
+// удаляет запись (точнее делает soft-delete: устанавливает deleted_at)
+// дальнейшие select-ы (при попытке перейти) не будут учитывать эту запись
+func (repo *LinkRepository) Delete(id uint) error {
+
+	// сам понимает какую таблицу обновлять (тк это gorm model)
+	result := repo.Database.DB.Delete(&Link{}, id) // в delete указываем из какой таблицы удаляем + указать условие (по id если, то можно 2 аргументом просто id передать)
+	// result := repo.Database.DB.Delete(&Link{}, "id = ?", id)
+	// // Удаление по одному условию
+	// repo.Database.DB.Where("hash = ?", hash).Delete(&Link{})
+	// // Удаление по нескольким условиям
+	// repo.Database.DB.Where("hash = ? AND active = ?", hash, true).Delete(&Link{})
+	// // Через структуру условий
+	// repo.Database.DB.Where(&Link{Hash: hash}).Delete(&Link{})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// RowsAffected вернет количество затронутых записей.
+	// Если 0 - значит запись не была найдена.
+	// Это более эффективный способ, так как используется один запрос к БД вместо двух.
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package link
 
 import (
+	"errors"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
 	"net/http"
@@ -46,6 +47,7 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 		createdLink, err := handler.LinkRepository.Create(link)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return // обязательно делаем return, иначе будет продолжать выполняться код ниже (и будет несколько строк выведено в респонсе)
 		}
 		response.ReturnJSON(w, http.StatusCreated, createdLink)
 	}
@@ -61,6 +63,7 @@ func (handler *LinkHandler) Update() http.HandlerFunc {
 		id, err := strconv.ParseUint(idString, 10, 32)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		link := &Link{ // не создаем через NewLink конструктор тк хотим дать возможность менять сам hash
@@ -72,6 +75,7 @@ func (handler *LinkHandler) Update() http.HandlerFunc {
 		updatedLink, err := handler.LinkRepository.Update(link)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		response.ReturnJSON(w, http.StatusOK, updatedLink)
@@ -80,7 +84,32 @@ func (handler *LinkHandler) Update() http.HandlerFunc {
 
 func (handler *LinkHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		idString := req.PathValue("id")
+		id, err := strconv.ParseUint(idString, 10, 32)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
+		// // чекаем есть ли запись (но более эффективно просто проверять кол-во заафекченных при удалении строк)
+		// _, err = handler.GetById(uint(id))
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusNotFound)
+		// 	return
+		// }
+
+		// удаляем запись
+		err = handler.LinkRepository.Delete(uint(id))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response.ReturnJSON(w, http.StatusOK, nil)
 	}
 }
 
