@@ -28,9 +28,10 @@ func main() {
 	})
 
 	// Middlewares
-	middlewareStack := middleware.Chain(
+	middlewareStack := middleware.Chain( // вызываются в таком же порядке
 		middleware.CORS,
 		middleware.Logging,
+		middleware.IsAuthed,
 	)
 
 	server := http.Server{ // конфигурируем сервер через структуру
