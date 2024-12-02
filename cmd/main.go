@@ -6,6 +6,7 @@ import (
 	"link-shortner-api/internal/auth"
 	"link-shortner-api/internal/link"
 	"link-shortner-api/pkg/db"
+	"link-shortner-api/pkg/middleware"
 	"net/http"
 )
 
@@ -28,7 +29,7 @@ func main() {
 
 	server := http.Server{ // конфигурируем сервер через структуру
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: router,
+		Handler: middleware.Logging(router),
 	}
 
 	fmt.Printf("Server is listening on port %d ...", port)
