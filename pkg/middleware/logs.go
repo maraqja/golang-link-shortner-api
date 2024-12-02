@@ -1,14 +1,20 @@
 package middleware
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		fmt.Println("before")  // обработка до вызова следующего хэндлера
-		next.ServeHTTP(w, req) // вызываем следующий хэндлер в цепочке
-		fmt.Println("after")   // обработка после вызова следующего хэндлера
+		start := time.Now()
+		wrapper := &WrapperWriter{ // нужно сделать обертку над ResponseWriter, чтобы сохранить статус код и иметь к нему доступ
+			ResponseWriter: w,
+			StatusCode:     http.StatusOK, // это просто дефолтное значение, которое будет перезаписано в случае, если статус код будет изменен
+		}
+		next.ServeHTTP(wrapper, req)                                                 // вызываем следующий хэндлер в цепочке
+		log.Println(wrapper.StatusCode, req.Method, req.URL.Path, time.Since(start)) // логируем с помощью встроенной библиотеки
+
 	})
 }
