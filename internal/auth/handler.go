@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"fmt"
 	"link-shortner-api/configs"
+	"link-shortner-api/pkg/jwt"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
 	"net/http"
@@ -39,15 +39,20 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 		email, err := handler.AuthService.Login(payload.Email, payload.Password)
 		if err != nil {
 			if err.Error() == ErrWrongCredentials {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Println(email)
+		token, err := jwt.NewJWT(handler.Config.Auth.Secret).Create(email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		data := LoginResponse{
-			Token: "123456",
+			Token: token,
 		}
 
 		response.ReturnJSON(w, http.StatusOK, data)
@@ -72,6 +77,17 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		response.ReturnJSON(w, http.StatusOK, email)
+
+		token, err := jwt.NewJWT(handler.Config.Auth.Secret).Create(email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data := RegisterResponse{
+			Token: token,
+		}
+
+		response.ReturnJSON(w, http.StatusOK, data)
 	}
 }
