@@ -10,15 +10,18 @@ import (
 
 type AuthHandlerDependencies struct { // структура для передачи зависимостей в конструктор
 	*configs.Config // раносильно записи Config *configs.Config
+	*AuthService
 }
 
 type AuthHandler struct { // структура для хранения зависимостей
 	*configs.Config // раносильно записи Config *configs.Config
+	*AuthService
 }
 
 func NewAuthHandler(router *http.ServeMux, dependencies *AuthHandlerDependencies) {
 	handler := &AuthHandler{
-		Config: dependencies.Config,
+		Config:      dependencies.Config,
+		AuthService: dependencies.AuthService,
 	}
 	router.Handle("POST /auth/login", handler.Login())
 	router.Handle("POST /auth/register", handler.Register())
@@ -49,11 +52,8 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		fmt.Println(payload)
-		data := RegisterResponse{
-			Token: "123456",
-		}
 
-		response.ReturnJSON(w, http.StatusOK, data)
+		handler.AuthService.Register(payload.Email, payload.Password, payload.Name)
+		// response.ReturnJSON(w, http.StatusOK, data)
 	}
 }

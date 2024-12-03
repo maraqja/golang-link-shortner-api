@@ -1,6 +1,7 @@
 package link
 
 import (
+	"fmt"
 	"link-shortner-api/pkg/db"
 
 	"gorm.io/gorm"
@@ -47,6 +48,7 @@ func (repo *LinkRepository) GetByHash(hash string) (*Link, error) {
 	if result.Error != nil {
 		return nil, result.Error
 	}
+	fmt.Printf("link = %v", link)
 	return &link, nil
 }
 
