@@ -35,7 +35,17 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 		if err != nil {
 			return // HandleBody сама выдаст соответствующий респонс при ошибке
 		}
-		fmt.Println(payload)
+
+		email, err := handler.AuthService.Login(payload.Email, payload.Password)
+		if err != nil {
+			if err.Error() == ErrWrongCredentials {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(email)
 		data := LoginResponse{
 			Token: "123456",
 		}
