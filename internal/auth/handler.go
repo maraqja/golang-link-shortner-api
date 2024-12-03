@@ -53,7 +53,15 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 			return
 		}
 
-		handler.AuthService.Register(payload.Email, payload.Password, payload.Name)
-		// response.ReturnJSON(w, http.StatusOK, data)
+		email, err := handler.AuthService.Register(payload.Email, payload.Password, payload.Name)
+		if err != nil {
+			if err.Error() == ErrUserExists {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		response.ReturnJSON(w, http.StatusOK, email)
 	}
 }

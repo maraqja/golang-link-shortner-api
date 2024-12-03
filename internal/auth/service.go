@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 	"link-shortner-api/internal/user"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -20,12 +22,17 @@ func (service *AuthService) Register(email, password, name string) (string, erro
 	if existedUser != nil {
 		return "", errors.New(ErrUserExists)
 	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
 	user := &user.User{
 		Email:    email,
-		Password: "", // надо захэшировать
+		Password: string(hashedPassword),
 		Name:     name,
 	}
-	_, err := service.UserRepository.Create(user)
+	_, err = service.UserRepository.Create(user)
 	/*
 		Почему лучше не сначала создать структуру и передавать указатель только в функцию
 		// 1. Сначала создается структура как значение
