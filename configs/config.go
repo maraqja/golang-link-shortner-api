@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Db DbConfig
+	Db   DbConfig
 	Auth AuthConfig
 }
 

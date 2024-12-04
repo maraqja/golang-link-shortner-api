@@ -2,6 +2,7 @@ package link
 
 import (
 	"errors"
+	"link-shortner-api/configs"
 	"link-shortner-api/pkg/middleware"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
@@ -13,6 +14,7 @@ import (
 
 type LinkHandlerDependencies struct {
 	*LinkRepository
+	Config *configs.Config
 }
 
 type LinkHandler struct {
@@ -24,7 +26,7 @@ func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies
 		LinkRepository: dependencies.LinkRepository,
 	}
 	router.HandleFunc("POST /link", handler.Create())
-	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Update())) // Здесь уже необходимо использовать Handle, тк middleware.IsAuthed() возвращает http.Handler
+	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Update(), dependencies.Config)) // Здесь уже необходимо использовать Handle, тк middleware.IsAuthed() возвращает http.Handler
 	router.HandleFunc("DELETE /link/{id}", handler.Delete())
 	router.HandleFunc("GET /{hash}", handler.GoTo())
 }

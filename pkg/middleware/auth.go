@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"fmt"
+	"link-shortner-api/configs"
+	"link-shortner-api/pkg/jwt"
 	"net/http"
 	"strings"
 )
 
-func IsAuthed(next http.Handler) http.Handler {
+func IsAuthed(next http.Handler, config *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		authHeader := req.Header.Get("Authorization")
 		if authHeader == "" {
@@ -20,7 +22,10 @@ func IsAuthed(next http.Handler) http.Handler {
 		}
 
 		token := headerParts[1]
-		fmt.Println(token)
+
+		isValid, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
+		fmt.Println(isValid)
+		fmt.Println(data)
 
 		next.ServeHTTP(w, req)
 	})
