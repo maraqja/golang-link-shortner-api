@@ -2,6 +2,7 @@ package link
 
 import (
 	"errors"
+	"fmt"
 	"link-shortner-api/configs"
 	"link-shortner-api/pkg/middleware"
 	"link-shortner-api/pkg/request"
@@ -58,6 +59,13 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 
 func (handler *LinkHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		email, ok := req.Context().Value(middleware.ContextEmailKey).(string)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized) // или 500 ???
+			return
+		}
+		fmt.Println(email)
+
 		body, err := request.HandleBody[LinkUpdateRequest](&w, req)
 		if err != nil {
 			return

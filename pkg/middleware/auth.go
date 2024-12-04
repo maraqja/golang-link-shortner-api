@@ -29,7 +29,11 @@ func IsAuthed(next http.Handler, config *configs.Config) http.Handler {
 
 		token := headerParts[1]
 
-		_, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
+		isValid, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
+		if !isValid {
+			http.Error(w, "Invalid JWT", http.StatusUnauthorized)
+			return
+		}
 
 		// каждый HTTP запрос содержит контекст, в котором можно хранить данные req.Context()
 		ctx := context.WithValue(req.Context(), ContextEmailKey, data.Email)
