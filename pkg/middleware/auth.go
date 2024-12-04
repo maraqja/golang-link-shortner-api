@@ -1,11 +1,17 @@
 package middleware
 
 import (
-	"fmt"
+	"context"
 	"link-shortner-api/configs"
 	"link-shortner-api/pkg/jwt"
 	"net/http"
 	"strings"
+)
+
+type key string
+
+const (
+	ContextEmailKey key = "ContextEmailKey"
 )
 
 func IsAuthed(next http.Handler, config *configs.Config) http.Handler {
@@ -23,10 +29,13 @@ func IsAuthed(next http.Handler, config *configs.Config) http.Handler {
 
 		token := headerParts[1]
 
-		isValid, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
-		fmt.Println(isValid)
-		fmt.Println(data)
+		_, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
 
-		next.ServeHTTP(w, req)
+		// каждый HTTP запрос содержит контекст, в котором можно хранить данные req.Context()
+		ctx := context.WithValue(req.Context(), ContextEmailKey, data.Email)
+		// после создания контекста со значением создаем новый запрос с этим контекстом
+		req_with_enhanced_context := req.WithContext(ctx) // создаем request из существующего с новым контекстом
+
+		next.ServeHTTP(w, req_with_enhanced_context)
 	})
 }
