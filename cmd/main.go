@@ -10,26 +10,20 @@ import (
 	"link-shortner-api/pkg/db"
 	"link-shortner-api/pkg/middleware"
 	"net/http"
-	"time"
 )
 
 func main() {
-	ctx := context.Background()                                       // создаем базовый контекст
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 2*time.Second) // из него создаем контекст с таймаутом
-	defer cancel()                                                    // если выполнили быстрее таймаута, то отменим контекст
+	type key string
+	const EmailKey key = "email"                                         // ключ для хранения email в контексте
+	ctx := context.Background()                                          // создаем контекст
+	ctxWithValue := context.WithValue(ctx, EmailKey, "test@example.com") // добавляем значение в контекст
 
-	done := make(chan struct{})
-
-	go func() {
-		time.Sleep(3 * time.Second)
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		fmt.Println("Done task")
-	case <-ctxWithTimeout.Done():
-		fmt.Println("Timeout")
+	userEmail, ok := ctxWithValue.Value(EmailKey).(string) // получаем значение из контекста и преобразовываем в строку
+	// В Go оператор приведения типа .(T) используется для приведения значения к определенному типу T
+	if ok {
+		fmt.Println(userEmail)
+	} else {
+		fmt.Println("No Value")
 	}
 }
 
