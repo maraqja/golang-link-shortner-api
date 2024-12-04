@@ -10,21 +10,31 @@ import (
 	"link-shortner-api/pkg/db"
 	"link-shortner-api/pkg/middleware"
 	"net/http"
+	"time"
 )
 
-func main() {
-	type key string
-	const EmailKey key = "email"                                         // ключ для хранения email в контексте
-	ctx := context.Background()                                          // создаем контекст
-	ctxWithValue := context.WithValue(ctx, EmailKey, "test@example.com") // добавляем значение в контекст
+func tickOperation(ctx context.Context) {
+	ticker := time.NewTicker(200 * time.Millisecond) // содержит канал, который можно слушать (каждый указанный период будет слать время тика)
+	for {
+		select {
+		case tick := <-ticker.C:
+			fmt.Println(tick)
+		case <-ctx.Done():
+			fmt.Println("cancel")
+			return
+		}
 
-	userEmail, ok := ctxWithValue.Value(EmailKey).(string) // получаем значение из контекста и преобразовываем в строку
-	// В Go оператор приведения типа .(T) используется для приведения значения к определенному типу T
-	if ok {
-		fmt.Println(userEmail)
-	} else {
-		fmt.Println("No Value")
 	}
+}
+
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	go tickOperation(ctx)
+
+	time.Sleep(2 * time.Second)
+	cancel()
+	time.Sleep(1 * time.Second) // нужно для того чтобы дождаться выполнения горутины с отменой
+
 }
 
 func main2() {
