@@ -2,6 +2,7 @@ package main
 
 import (
 	"link-shortner-api/internal/link"
+	"link-shortner-api/internal/stat"
 	"link-shortner-api/internal/user"
 	"os"
 
@@ -22,7 +23,7 @@ func main() {
 
 	// db.Migrator().CreateTable()
 
-	db.AutoMigrate(&link.Link{}, &user.User{})
+	db.AutoMigrate(&link.Link{}, &user.User{}, &stat.Stat{})
 	/*
 		db.AutoMigrate(&link.Link{}) автоматически создает или обновляет таблицу в базе данных на основе структуры Link.
 		Вот что происходит:
