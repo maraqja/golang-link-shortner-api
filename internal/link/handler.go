@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"link-shortner-api/configs"
+	"link-shortner-api/internal/stat"
 	"link-shortner-api/pkg/middleware"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
@@ -15,16 +16,19 @@ import (
 
 type LinkHandlerDependencies struct {
 	*LinkRepository
+	*stat.StatRepository
 	Config *configs.Config
 }
 
 type LinkHandler struct {
 	*LinkRepository
+	*stat.StatRepository
 }
 
 func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies) {
 	handler := &LinkHandler{
 		LinkRepository: dependencies.LinkRepository,
+		StatRepository: dependencies.StatRepository,
 	}
 	router.HandleFunc("POST /link", handler.Create())
 	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Update(), dependencies.Config)) // Здесь уже необходимо использовать Handle, тк middleware.IsAuthed() возвращает http.Handler
@@ -133,6 +137,7 @@ func (handler *LinkHandler) GoTo() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		handler.StatRepository.AddClick(link.ID)
 		http.Redirect(w, req, link.Url, http.StatusTemporaryRedirect) // если все ок, то редиректим на ссылку
 	}
 }
