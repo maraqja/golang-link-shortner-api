@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"link-shortner-api/configs"
-	"link-shortner-api/internal/stat"
+	"link-shortner-api/pkg/di"
 	"link-shortner-api/pkg/middleware"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
@@ -16,13 +16,13 @@ import (
 
 type LinkHandlerDependencies struct {
 	*LinkRepository
-	*stat.StatRepository
-	Config *configs.Config
+	StatRepository di.IStatRepository
+	Config         *configs.Config
 }
 
 type LinkHandler struct {
-	*LinkRepository
-	*stat.StatRepository
+	*LinkRepository // тоже по сути нужно бы вынести в интерфейс, если будет использоваться в другом месте
+	StatRepository  di.IStatRepository
 }
 
 func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies) {
