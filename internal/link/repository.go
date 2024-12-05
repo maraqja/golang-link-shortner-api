@@ -87,3 +87,78 @@ func (repo *LinkRepository) Delete(id uint) error {
 	}
 	return nil
 }
+
+func (repo *LinkRepository) GetCount() (int64, error) {
+	var count int64
+	result := repo.Database.DB.
+		Table("links").
+		Where("deleted_at IS NULL").
+		Count(&count)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return count, nil
+}
+
+func (repo *LinkRepository) GetAll(limit, offset int) ([]Link, error) {
+	var links []Link
+
+	// result := repo.Database.DB.Limit(limit).Offset(offset).Find(&links)
+	// Используем query builder
+	result := repo.Database.DB.
+		Table("links").
+		Select("*"). // если указываем не все поля, то нужно описать новую структуру
+		Where("deleted_at IS NULL").
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Scan(&links) // разница с Find: Scan не заполняет gorm.Model
+
+	/*
+			// Разница Find и Scan:
+
+
+
+			type Link struct {
+				gorm.Model   // (ID, CreatedAt, UpdatedAt, DeletedAt)
+				Hash string
+				URL  string
+			}
+
+			// Используем Find
+			var link1 Link
+			db.Table("links").Where("id = 1").Find(&link1)
+			// После этого если сделаем:
+			link1.Hash = "new-hash"
+			db.Save(&link1)  // GORM автоматически обновит UpdatedAt
+
+			// Используем Scan
+			var link2 Link
+			db.Table("links").Where("id = 1").Scan(&link2)
+			// После этого если сделаем:
+			link2.Hash = "new-hash"
+			db.Save(&link2)  // UpdatedAt придется обновлять вручную
+
+			// То есть Find() подготавливает структуру для дальнейшей работы с GORM (делает её "отслеживаемой"),
+			 а Scan() просто копирует данные из БД в структуру без дополнительной подготовки.
+
+		/*
+
+		/*
+					// Если нужно использоваться фулл запрос
+				result := repo.Database.DB.Raw(`
+			        SELECT *
+			        FROM links
+			        WHERE deleted_at IS NULL
+			        ORDER BY created_at DESC
+			        LIMIT ?
+			        OFFSET ?
+			    `, limit, offset).Scan(&links)
+	*/
+
+	if result.Error != nil {
+		return nil, result.Error
+
+	}
+	return links, nil
+}

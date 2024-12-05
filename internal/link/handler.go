@@ -30,6 +30,7 @@ func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies
 	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Update(), dependencies.Config)) // Здесь уже необходимо использовать Handle, тк middleware.IsAuthed() возвращает http.Handler
 	router.HandleFunc("DELETE /link/{id}", handler.Delete())
 	router.HandleFunc("GET /{hash}", handler.GoTo())
+	router.Handle("GET /link", middleware.IsAuthed(handler.GetAll(), dependencies.Config))
 }
 
 func (handler *LinkHandler) Create() http.HandlerFunc {
@@ -133,5 +134,36 @@ func (handler *LinkHandler) GoTo() http.HandlerFunc {
 			return
 		}
 		http.Redirect(w, req, link.Url, http.StatusTemporaryRedirect) // если все ок, то редиректим на ссылку
+	}
+}
+
+func (handler *LinkHandler) GetAll() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		limit, err := strconv.Atoi(req.URL.Query().Get("limit")) // получаем query и конвертируем в int (конвертация может упасть с ошибкой)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid limit: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+		offset, err := strconv.Atoi(req.URL.Query().Get("offset")) // получаем query и конвертируем в int (конвертация может упасть с ошибкой)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Invalid offset: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+		links, err := handler.LinkRepository.GetAll(limit, offset)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Ошибка при получении ссылок: %s:", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		count, err := handler.LinkRepository.GetCount()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Ошибка при получении общего количества ссылок: %s:", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		response.ReturnJSON(w, http.StatusOK, GetAllLinksResponse{
+			Link:  links,
+			Count: count,
+		})
+
 	}
 }
