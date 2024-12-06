@@ -43,6 +43,10 @@ func main() {
 		EventBus:       eventBus,
 		Config:         config,
 	})
+	stat.NewStatHandler(router, &stat.StatHandlerDependencies{
+		StatRepository: statRepository,
+		Config:         config,
+	})
 
 	// Middlewares
 	middlewareStack := middleware.Chain( // вызываются в таком же порядке
