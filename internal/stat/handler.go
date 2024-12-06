@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"link-shortner-api/configs"
 	"link-shortner-api/pkg/middleware"
+	"link-shortner-api/pkg/response"
 	"net/http"
 	"time"
 )
 
 const (
-	FilterByDay   = "day"
-	FilterByMonth = "month"
+	GroupByDay   = "day"
+	GroupByMonth = "month"
 )
 
 type StatHandlerDependencies struct {
@@ -44,10 +45,11 @@ func (handler *StatHandler) GetStat() http.HandlerFunc {
 		}
 
 		by := req.URL.Query().Get("by")
-		if by != FilterByDay && by != FilterByMonth {
+		if by != GroupByDay && by != GroupByMonth {
 			http.Error(w, "Invalid by query", http.StatusBadRequest)
 			return
 		}
-		fmt.Println(from, to, by)
+		stats := handler.GetStats(by, from, to)
+		response.ReturnJSON(w, http.StatusOK, stats)
 	}
 }

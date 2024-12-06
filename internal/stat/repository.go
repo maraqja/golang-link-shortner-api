@@ -37,3 +37,38 @@ func (repo *StatRepository) AddClick(linkId uint) {
 		repo.DB.Save(&stat)
 	}
 }
+
+func (repo *StatRepository) GetStats(by string, from, to time.Time) []GetStatResponse {
+	var stats []GetStatResponse
+
+	/*
+		SELECT to_char(date, format) AS period, sum(clicks) FROM stats
+		WHERE date BETWEEN '01/01/2000' AND '01/01/2026'
+		GROUP BY period
+		ORDER BY period
+
+
+		в зависимости от by:
+			by = month => format = 'YYYY-MM'
+			by = day ==> format = 'YYYY-MM-DD'
+	*/
+
+	var selectQuery string
+	switch by {
+	case GroupByDay:
+		selectQuery = "to_char(date, 'YYYY-MM-DD') AS period, sum(clicks)"
+	case GroupByMonth:
+		selectQuery = "to_char(date, 'YYYY-MM') AS period, sum(clicks)"
+	}
+
+	repo.Db.
+		Table("stats").
+		Select(selectQuery).
+		Where("date BETWEEN ? AND ?", from, to).
+		Group("period").
+		Order("period").
+		Scan(&stats)
+
+	return stats
+
+}
