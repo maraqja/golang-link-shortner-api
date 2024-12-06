@@ -8,6 +8,7 @@ import (
 	"link-shortner-api/internal/stat"
 	"link-shortner-api/internal/user"
 	"link-shortner-api/pkg/db"
+	"link-shortner-api/pkg/event"
 	"link-shortner-api/pkg/middleware"
 	"net/http"
 )
@@ -16,10 +17,17 @@ func main() {
 	port := 8081
 	config := configs.LoadConfig()
 
+	eventBus := event.NewEventBus()
+
 	db := db.NewDb(config)
 	linkRepository := link.NewLinkRepository(db)
 	userRepository := user.NewUserRepository(db)
 	statRepository := stat.NewStatRepository(db)
+	statService := stat.NewStatService(&stat.StatServiceDependencies{
+		EventBus:       eventBus,
+		StatRepository: statRepository,
+	})
+	go statService.ListenLinkEvents() // в горутине бесконечно слушаем сообщения и обрабатываем их
 
 	authService := auth.NewAuthService(userRepository)
 
@@ -32,7 +40,7 @@ func main() {
 	})
 	link.NewLinkHandler(router, &link.LinkHandlerDependencies{
 		LinkRepository: linkRepository,
-		StatRepository: statRepository,
+		EventBus:       eventBus,
 		Config:         config,
 	})
 

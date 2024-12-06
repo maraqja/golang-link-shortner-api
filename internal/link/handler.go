@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"link-shortner-api/configs"
-	"link-shortner-api/pkg/di"
+	"link-shortner-api/pkg/event"
 	"link-shortner-api/pkg/middleware"
 	"link-shortner-api/pkg/request"
 	"link-shortner-api/pkg/response"
@@ -16,19 +16,19 @@ import (
 
 type LinkHandlerDependencies struct {
 	*LinkRepository
-	StatRepository di.IStatRepository
-	Config         *configs.Config
+	EventBus *event.EventBus
+	Config   *configs.Config
 }
 
 type LinkHandler struct {
 	*LinkRepository // тоже по сути нужно бы вынести в интерфейс, если будет использоваться в другом месте
-	StatRepository  di.IStatRepository
+	EventBus        *event.EventBus
 }
 
 func NewLinkHandler(router *http.ServeMux, dependencies *LinkHandlerDependencies) {
 	handler := &LinkHandler{
 		LinkRepository: dependencies.LinkRepository,
-		StatRepository: dependencies.StatRepository,
+		EventBus:       dependencies.EventBus,
 	}
 	router.HandleFunc("POST /link", handler.Create())
 	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Update(), dependencies.Config)) // Здесь уже необходимо использовать Handle, тк middleware.IsAuthed() возвращает http.Handler
@@ -137,7 +137,13 @@ func (handler *LinkHandler) GoTo() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		handler.StatRepository.AddClick(link.ID)
+
+		// go handler.StatRepository.AddClick(link.ID) // с точки зрения пользователя нет необходимости в записи клика, это сайдэффект как бы, поэтому запускаем ассинхронно (конкурентно/параллельно) (архитектурно вернее использовать отдельную шину событий: в случае необходимости выполнения множества сайдэффектов будет слишком много зависимостей, а так только одна)
+
+		go handler.EventBus.Publish(event.Event{ // публикуем событие
+			Type: event.EventLinKVisited, Payload: link.ID,
+		})
+
 		http.Redirect(w, req, link.Url, http.StatusTemporaryRedirect) // если все ок, то редиректим на ссылку
 	}
 }
