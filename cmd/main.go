@@ -13,8 +13,7 @@ import (
 	"net/http"
 )
 
-func main() {
-	port := 8081
+func App() http.Handler { // выносим инициализацию отдельно для тестов
 	config := configs.LoadConfig()
 
 	eventBus := event.NewEventBus()
@@ -53,10 +52,14 @@ func main() {
 		middleware.CORS,
 		middleware.Logging,
 	)
+	return middlewareStack(router)
+}
 
+func main() {
+	port := 8081
 	server := http.Server{ // конфигурируем сервер через структуру
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: middlewareStack(router),
+		Handler: App(),
 	}
 
 	fmt.Printf("Server is listening on port %d ...", port)
