@@ -92,6 +92,6 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 			Token: token,
 		}
 
-		response.ReturnJSON(w, http.StatusOK, data)
+		response.ReturnJSON(w, http.StatusCreated, data)
 	}
 }
