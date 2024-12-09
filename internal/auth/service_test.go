@@ -24,8 +24,10 @@ func TestRegisterSuccess(t *testing.T) {
 	email, err := authService.Register(initialEmail, "password", "kaka")
 	if err != nil {
 		t.Fatal(err)
+		return
 	}
 	if email != initialEmail {
 		t.Fatalf("Email %s do not match %s", email, initialEmail)
+		return
 	}
 }
